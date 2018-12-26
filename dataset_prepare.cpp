@@ -60,7 +60,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		resize(int min_size, int max_size, int size_step, op& next) :
+		resize(int min_size, int max_size, int size_step, const op& next) :
 			min_size(min_size),
 			max_size(max_size),
 			size_step(size_step),
@@ -82,7 +82,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		shear(float smin/* = 0*/, float smax/* = 1.5*/, float sstep/* = 0.5*/, op& next) :
+		shear(float smin/* = 0*/, float smax/* = 1.5*/, float sstep/* = 0.5*/, const op& next) :
 			shear_min(smin),
 			shear_max(smax),
 			shear_step(sstep),
@@ -128,7 +128,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		rotate(float min_angle/* = -45*/, float max_angle/* = 45*/, float angle_step/* = 15*/, op& next) :
+		rotate(float min_angle/* = -45*/, float max_angle/* = 45*/, float angle_step/* = 15*/, const op& next) :
 			min_angle(min_angle),
 			max_angle(max_angle),
 			angle_step(angle_step),
@@ -161,7 +161,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		brightness(float min_brightness/* = -16 * 14*/, float max_brightness/* = 16 * 14*/, float brightness_step/* = 16 * 4*/, op& next) :
+		brightness(float min_brightness/* = -16 * 14*/, float max_brightness/* = 16 * 14*/, float brightness_step/* = 16 * 4*/, const op& next) :
 			min_brightness(min_brightness),
 			max_brightness(max_brightness),
 			brightness_step(brightness_step),
@@ -184,7 +184,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		blur(int min_blur/* = -16 * 14*/, int max_blur/* = 16 * 14*/, int blur_step/* = 16 * 4*/, op& next) :
+		blur(int min_blur/* = -16 * 14*/, int max_blur/* = 16 * 14*/, int blur_step/* = 16 * 4*/, const op& next) :
 			min_blur(min_blur),
 			max_blur(max_blur),
 			blur_step(blur_step),
@@ -214,7 +214,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		noise(float mean/* = 50*/, float sigma/* = 50*/, op& next) :
+		noise(float mean/* = 50*/, float sigma/* = 50*/, const op& next) :
 			mean(mean),
 			sigma(sigma),
 			next(next)
@@ -239,7 +239,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		pad(int width/* = 416*/, int height/* = 416*/, op& next) :
+		pad(int width/* = 416*/, int height/* = 416*/, const op& next) :
 			width(width),
 			height(height),
 			next(next)
@@ -267,7 +267,7 @@ namespace dp {
 		const op& next;
 
 	public:
-		save(const boost::filesystem::path& folder, op& next) :
+		save(const boost::filesystem::path& folder, const op& next) :
 			folder(folder),
 			next(next)
 		{
