@@ -373,7 +373,7 @@ void prepare_marker(const boost::filesystem::path& src, const boost::filesystem:
 
 		static bool first = true;
 
-		std::ofstream names((dst_dir / "names.txt").string(), std::ios::out | (first ? 0 : std::ios::app));
+		std::ofstream names((dst_dir / "names.txt").string(), std::ios::out | (first ? std::ios::out : std::ios::app));
 
 		first = false;
 
