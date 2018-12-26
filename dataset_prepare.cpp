@@ -5,6 +5,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
+#include <boost/lexical_cast.hpp>
 #include "dataset_prepare.h"
 
 using namespace std;
@@ -54,6 +55,27 @@ namespace dp {
 		virtual void operator()(const cv::Mat& img, dp::context& context) const {}
 	};
 
+	class quad : public op {
+
+		const op& next;
+
+	public:
+		quad(const op& next) :
+			next(next) {
+		}
+
+		virtual void operator()(const cv::Mat& img, dp::context& context) const {
+
+			int s = std::min(img.cols, img.rows);
+
+			Mat quad(s, s, img.type(), Scalar(127, 127, 127, 0));
+
+			cv::Rect rect((img.cols - s) / 2, (img.rows - s) / 2, s, s);
+			img(rect).copyTo(quad);
+			next(quad, context);
+		}
+	};
+
 	class resize : public op {
 
 		const int min_size, max_size, size_step;
@@ -68,7 +90,7 @@ namespace dp {
 		}
 
 		virtual void operator()(const cv::Mat& img, dp::context& context) const {
-			for (int size = min_size; size < max_size; size += size_step) {
+			for (int size = min_size; size <= max_size; size += size_step) {
 				cv::Mat resized;
 				cv::resize(img, resized, cv::Size(size, size), 0, 0, cv::INTER_LANCZOS4);
 				next(resized, context);
@@ -264,11 +286,15 @@ namespace dp {
 	class save : public op {
 
 		const boost::filesystem::path folder;
+		const bool positive;
+		std::function<void(const std::string& /**/)> save_cb;
 		const op& next;
 
 	public:
-		save(const boost::filesystem::path& folder, const op& next) :
+		save(const boost::filesystem::path& folder, bool positive, std::function<void(const std::string& /**/)> save_cb, const op& next) :
 			folder(folder),
+			positive(positive),
+			save_cb(save_cb),
 			next(next)
 		{
 
@@ -288,10 +314,15 @@ namespace dp {
 			cv::imwrite(path.string(), img, params);
 
 			std::ofstream txt(path_txt.string());
-			txt << context.id << " " << (float)context.selection.x / img.cols << " " << (float)context.selection.y / img.rows << " "
-				<< (float)context.selection.width / img.cols << " " << (float)context.selection.height / img.rows;
+
+			if (positive) {
+				txt << context.id << " " << (float)context.selection.x / img.cols << " " << (float)context.selection.y / img.rows << " "
+					<< (float)context.selection.width / img.cols << " " << (float)context.selection.height / img.rows;
+			}
+
 			txt.close();
 			
+			save_cb(path.string());
 
 			next(img, context);
 		}
@@ -315,31 +346,78 @@ namespace dp {
 	};
 }
 
-void prepare_marker(const boost::filesystem::path& src, const boost::filesystem::path& dst) {
-	cout << src.string() << endl;
+void prepare_marker(const boost::filesystem::path& src, const boost::filesystem::path& dst, std::function<void(const std::string& /**/)> save_cb) {
+
+	cout << src << endl;
+
+	if (src.extension() != ".png") {
+		cout << "skipping, not png..." << endl;
+		return;
+	}
 	
 
 	int min_size = opts["minsize"].as<int>();
 	int max_size = opts["maxsize"].as<int>();
 	int size_step = opts["stepsize"].as<int>();
 
-	static int id = 0;
+	const int id = boost::lexical_cast<int>(src.stem().string());
 
 	dp::context context;
-	context.id = id++;
+	context.id = id;
+
+	cout << id << endl;
+
+
+	{
+		boost::filesystem::path dst_dir(opts["dst"].as<std::string>());
+
+		static bool first = true;
+
+		std::ofstream names((dst_dir / "names.txt").string(), std::ios::out | (first ? 0 : std::ios::app));
+
+		first = false;
+
+		names << id << endl;
+	}
 
 	cv::Mat img = cv::imread(src.string());
 	cv::cvtColor(img, img, CV_32F);
 
-	dp::resize(min_size, max_size, size_step,
-		dp::shear(0, 1.0, 0.5, 
-			dp::rotate(-45, 45, 15,
-				dp::pad(416, 416,
-					dp::brightness(-16 * 2, 16 * 10, 16 * 4,
-						dp::blur(0, 1, 1,
-							dp::noise(10, 10,
-								dp::save(dst,
-									dp::show()))))))))(img, context);
+	dp::quad(
+		dp::resize(min_size, max_size, size_step,
+			dp::shear(0, 1.0, 0.5, 
+				dp::rotate(-45, 45, 15,
+					dp::pad(416, 416,
+						dp::brightness(-16 * 2, 16 * 10, 16 * 4,
+							dp::blur(0, 1, 1,
+								dp::noise(10, 10,
+									dp::save(dst, true, save_cb,
+										dp::show())))))))))(img, context);
+
+}
+
+
+void prepare_background(const boost::filesystem::path& src, const boost::filesystem::path& dst, std::function<void(const std::string&)> save_cb) {
+
+	cout << src << endl;
+
+	if (src.extension() != ".png") {
+		cout << "skipping, not png..." << endl;
+		return;
+	}
+
+
+	dp::context context;
+
+	cv::Mat img = cv::imread(src.string());
+	cv::cvtColor(img, img, CV_32F);
+
+	dp::resize(416, 416, 1,
+		dp::shear(0, 1.0, 0.5,
+			dp::rotate(-15, 15, 15,
+				dp::brightness(-16 * 2, 16 * 10, 16 * 4,
+					dp::save(dst, false, save_cb,
+						dp::show())))))(img, context);
 
 }
 
@@ -352,11 +430,28 @@ int main(int argc, char* argv[]) {
 
 	boost::filesystem::path src_dir(opts["src"].as<std::string>());
 	boost::filesystem::path dst_dir(opts["dst"].as<std::string>());
+	boost::filesystem::path valid_path = dst_dir / "valid.txt";
+	boost::filesystem::path train_path = dst_dir / "train.txt";
+
+	std::ofstream valid(valid_path.string());
+	std::ofstream train(train_path.string());
 
 	for (boost::filesystem::recursive_directory_iterator i(src_dir / "markers"), end; i != end; i++) {
 
 		if (is_regular_file(*i)) {
-			prepare_marker(i->path(), dst_dir / "positive");
+			prepare_marker(i->path(), dst_dir / "positive", [&valid, &train](const std::string& file_path) {
+				valid << file_path << endl;
+				train << file_path << endl;
+			});
+		}
+	}
+
+	for (boost::filesystem::recursive_directory_iterator i(src_dir / "backgrounds"), end; i != end; i++) {
+
+		if (is_regular_file(*i)) {
+			prepare_background(i->path(), dst_dir / "negative", [&train](const std::string& file_path) {
+				train << file_path << endl;
+			});
 		}
 	}
 
