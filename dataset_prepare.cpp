@@ -316,7 +316,7 @@ namespace dp {
 			std::ofstream txt(path_txt.string());
 
 			if (positive) {
-				txt << context.id << " " << (float)context.selection.x / img.cols << " " << (float)context.selection.y / img.rows << " "
+				txt << context.id << " " << (float)(context.selection.x + context.selection.width / 2) / img.cols << " " << (float)(context.selection.y + context.selection.height / 2) / img.rows << " "
 					<< (float)context.selection.width / img.cols << " " << (float)context.selection.height / img.rows;
 			}
 
@@ -436,14 +436,27 @@ int main(int argc, char* argv[]) {
 	std::ofstream valid(valid_path.string());
 	std::ofstream train(train_path.string());
 
+	std::vector<boost::filesystem::path> files;
+
 	for (boost::filesystem::recursive_directory_iterator i(src_dir / "markers"), end; i != end; i++) {
 
-		if (is_regular_file(*i)) {
-			prepare_marker(i->path(), dst_dir / "positive", [&valid, &train](const std::string& file_path) {
-				valid << file_path << endl;
-				train << file_path << endl;
-			});
+		if (is_regular_file(*i) && i->path().has_stem()) {
+			files.push_back(i->path());
 		}
+	}
+
+
+	std::sort(files.begin(), files.end(), [](const boost::filesystem::path& p1, const boost::filesystem::path& p2) {
+		return p1.stem() < p2.stem();
+	});
+
+
+	for (const auto& i : files) {
+
+		prepare_marker(i, dst_dir / "positive", [&valid, &train](const std::string& file_path) {
+			valid << file_path << endl;
+			train << file_path << endl;
+		});
 	}
 
 	for (boost::filesystem::recursive_directory_iterator i(src_dir / "backgrounds"), end; i != end; i++) {
