@@ -23,6 +23,7 @@ void parse_options(int argc, char* argv[]) {
 	options_description desc{ "Options" };
 	desc.add_options()
 		("help,h", "Help screen")
+		("show", "Show intermediate view")
 		("src", value<string>()->default_value("dataset"), "Source folder")
 		("dst", value<string>()->default_value("dataset"), "Destination folder")
 		("minsize", value<int>()->default_value(30), "Minimum marker size")
@@ -304,10 +305,12 @@ namespace dp {
 
 		virtual void operator()(const cv::Mat& img, dp::context& context) const {
 
-			Mat out = img.clone();
-			cv::rectangle(out, context.selection, Scalar(0, 0, 255), 3, cv::LINE_AA);
-			cv::imshow("img", out);
-			cv::waitKey(1);
+			if (opts.count("show")) {
+				Mat out = img.clone();
+				cv::rectangle(out, context.selection, Scalar(0, 0, 255), 3, cv::LINE_AA);
+				cv::imshow("img", out);
+				cv::waitKey(1);
+			}
 		}
 	};
 }
