@@ -455,16 +455,31 @@ int main(int argc, char* argv[]) {
 	for (const auto& i : files) {
 
 		prepare_marker(i, dst_dir / "positive", [&valid, &train](const std::string& file_path) {
-			valid << file_path << endl;
-			train << file_path << endl;
+			static bool to_valid = true;
+			if (to_valid) {
+				valid << file_path << endl;
+			}
+			else {
+				train << file_path << endl;
+			}
+
+			to_valid = !to_valid;
 		});
 	}
 
 	for (boost::filesystem::recursive_directory_iterator i(src_dir / "backgrounds"), end; i != end; i++) {
 
 		if (is_regular_file(*i)) {
-			prepare_background(i->path(), dst_dir / "negative", [&train](const std::string& file_path) {
-				train << file_path << endl;
+			prepare_background(i->path(), dst_dir / "negative", [&valid, &train](const std::string& file_path) {
+				static bool to_valid = true;
+				if (to_valid) {
+					valid << file_path << endl;
+				}
+				else {
+					train << file_path << endl;
+				}
+
+				to_valid = !to_valid;
 			});
 		}
 	}
