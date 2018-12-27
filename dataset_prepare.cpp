@@ -27,9 +27,9 @@ void parse_options(int argc, char* argv[]) {
 		("show", "Show intermediate view")
 		("src", value<string>()->default_value("dataset"), "Source folder")
 		("dst", value<string>()->default_value("dataset"), "Destination folder")
-		("minsize", value<int>()->default_value(30), "Minimum marker size")
+		("minsize", value<int>()->default_value(20), "Minimum marker size")
 		("maxsize", value<int>()->default_value(416 / 2), "Maximum marker size")
-		("stepsize", value<int>()->default_value(40), "Minimum marker size")
+		("stepsize", value<int>()->default_value(10), "Minimum marker size")
 		;
 
 	store(parse_command_line(argc, argv, desc), opts);
