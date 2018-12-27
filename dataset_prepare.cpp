@@ -452,6 +452,11 @@ int main(int argc, char* argv[]) {
 	});
 
 
+	
+	boost::system::error_code ec;
+	boost::filesystem::remove_all(dst_dir / "positive", ec);
+	boost::filesystem::remove_all(dst_dir / "negative", ec);
+
 	for (const auto& i : files) {
 
 		prepare_marker(i, dst_dir / "positive", [&valid, &train](const std::string& file_path) {
