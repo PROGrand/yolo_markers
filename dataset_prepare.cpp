@@ -385,14 +385,14 @@ void prepare_marker(const boost::filesystem::path& src, const boost::filesystem:
 
 	dp::quad(
 		dp::resize(min_size, max_size, size_step,
-			dp::shear(0, 1.0, 0.5, 
-				dp::rotate(-45, 45, 15,
+			//dp::shear(0, 1.0, 0.5, 
+				//dp::rotate(-45, 45, 15,
 					dp::pad(416, 416,
 						dp::brightness(-16 * 2, 16 * 10, 16 * 4,
 							dp::blur(0, 1, 1,
-								dp::noise(10, 10,
+								//dp::noise(10, 10,
 									dp::save(dst, true, save_cb,
-										dp::show())))))))))(img, context);
+										dp::show()))))))(img, context);
 
 }
 
@@ -413,11 +413,11 @@ void prepare_background(const boost::filesystem::path& src, const boost::filesys
 	cv::cvtColor(img, img, CV_32F);
 
 	dp::resize(416, 416, 1,
-		dp::shear(0, 1.0, 0.5,
-			dp::rotate(-15, 15, 15,
-				dp::brightness(-16 * 2, 16 * 10, 16 * 4,
+		//dp::shear(0, 1.0, 0.5,
+		//	dp::rotate(-15, 15, 15,
+		//		dp::brightness(-16 * 2, 16 * 10, 16 * 4,
 					dp::save(dst, false, save_cb,
-						dp::show())))))(img, context);
+						dp::show()))(img, context);
 
 }
 
