@@ -29,7 +29,7 @@ void parse_options(int argc, char* argv[]) {
 		("dst", value<string>()->default_value("dataset"), "Destination folder")
 		("minsize", value<int>()->default_value(20), "Minimum marker size")
 		("maxsize", value<int>()->default_value(416 / 2), "Maximum marker size")
-		("stepsize", value<int>()->default_value(10), "Minimum marker size")
+		("stepsize", value<int>()->default_value(8), "Minimum marker size")
 		;
 
 	store(parse_command_line(argc, argv, desc), opts);
@@ -383,16 +383,16 @@ void prepare_marker(const boost::filesystem::path& src, const boost::filesystem:
 	cv::Mat img = cv::imread(src.string());
 	cv::cvtColor(img, img, CV_32F);
 
-	dp::quad(
-		dp::resize(min_size, max_size, size_step,
-			//dp::shear(0, 1.0, 0.5, 
-				//dp::rotate(-45, 45, 15,
-					dp::pad(416, 416,
-						dp::brightness(-16 * 2, 16 * 10, 16 * 4,
-							dp::blur(0, 1, 1,
-								//dp::noise(10, 10,
-									dp::save(dst, true, save_cb,
-										dp::show()))))))(img, context);
+	
+	dp::resize(min_size, max_size, size_step,
+		//dp::shear(0, 1.0, 0.5, 
+			//dp::rotate(-45, 45, 15,
+				dp::pad(416, 416,
+					dp::brightness(-16 * 2, 16 * 10, 16 * 4,
+						dp::blur(0, 1, 1,
+							//dp::noise(10, 10,
+								dp::save(dst, true, save_cb,
+									dp::show())))))(img, context);
 
 }
 
@@ -412,12 +412,13 @@ void prepare_background(const boost::filesystem::path& src, const boost::filesys
 	cv::Mat img = cv::imread(src.string());
 	cv::cvtColor(img, img, CV_32F);
 
-	dp::resize(416, 416, 1,
-		//dp::shear(0, 1.0, 0.5,
-		//	dp::rotate(-15, 15, 15,
-		//		dp::brightness(-16 * 2, 16 * 10, 16 * 4,
-					dp::save(dst, false, save_cb,
-						dp::show()))(img, context);
+	dp::quad(
+		dp::resize(416, 416, 1,
+			//dp::shear(0, 1.0, 0.5,
+			//	dp::rotate(-15, 15, 15,
+			//		dp::brightness(-16 * 2, 16 * 10, 16 * 4,
+						dp::save(dst, false, save_cb,
+							dp::show())))(img, context);
 
 }
 
